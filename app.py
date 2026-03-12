@@ -4,6 +4,7 @@ import requests
 import PyPDF2
 import io
 import os
+import traceback
 
 app = Flask(__name__)
 CORS(app)
@@ -17,16 +18,19 @@ def index():
 @app.route('/chat', methods=['POST'])
 def chat():
     if not ANTHROPIC_API_KEY:
+        print("ERROR: ANTHROPIC_API_KEY is not set")
         return jsonify({'error': 'API key not configured on server'}), 500
 
-    data = request.json
-    messages = data.get('messages', [])
-    system = data.get('system', '')
-
-    if not messages:
-        return jsonify({'error': 'No messages provided'}), 400
-
     try:
+        data = request.json
+        print(f"Received chat request with {len(data.get('messages', []))} messages")
+        
+        messages = data.get('messages', [])
+        system = data.get('system', '')
+
+        if not messages:
+            return jsonify({'error': 'No messages provided'}), 400
+
         response = requests.post(
             'https://api.anthropic.com/v1/messages',
             headers={
@@ -42,13 +46,18 @@ def chat():
             },
             timeout=30
         )
+        print(f"Anthropic response status: {response.status_code}")
         result = response.json()
+        print(f"Anthropic result keys: {list(result.keys())}")
+        
         if 'error' in result:
+            print(f"Anthropic error: {result['error']}")
             return jsonify({'error': result['error'].get('message', 'Anthropic API error')}), 500
         return jsonify(result)
-    except requests.exceptions.Timeout:
-        return jsonify({'error': 'Request timed out. Try again.'}), 504
+
     except Exception as e:
+        print(f"EXCEPTION in /chat: {str(e)}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
