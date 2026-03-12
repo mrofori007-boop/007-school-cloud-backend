@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import requests
 import PyPDF2
@@ -6,6 +6,10 @@ import io
 
 app = Flask(__name__)
 CORS(app)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/read-pdf', methods=['POST'])
 def read_pdf():
@@ -17,7 +21,6 @@ def read_pdf():
         return jsonify({'error': 'Missing fileId or accessToken'}), 400
 
     try:
-        # Download the PDF from Google Drive
         url = f'https://www.googleapis.com/drive/v3/files/{file_id}?alt=media'
         headers = {'Authorization': f'Bearer {access_token}'}
         response = requests.get(url, headers=headers)
@@ -25,7 +28,6 @@ def read_pdf():
         if response.status_code != 200:
             return jsonify({'error': 'Could not fetch file from Drive'}), 400
 
-        # Read PDF content
         pdf_file = io.BytesIO(response.content)
         reader = PyPDF2.PdfReader(pdf_file)
 
