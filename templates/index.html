@@ -486,12 +486,10 @@ YOUR ROLE:
 FORMAT: Use ** for bold, number exam questions, always give model answers after questions.`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(BACKEND + '/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
         system: sys,
         messages: history
       })
