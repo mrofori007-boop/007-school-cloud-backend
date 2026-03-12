@@ -16,6 +16,9 @@ def index():
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    if not ANTHROPIC_API_KEY:
+        return jsonify({'error': 'API key not configured on server'}), 500
+
     data = request.json
     messages = data.get('messages', [])
     system = data.get('system', '')
@@ -36,9 +39,15 @@ def chat():
                 'max_tokens': 1000,
                 'system': system,
                 'messages': messages
-            }
+            },
+            timeout=30
         )
-        return jsonify(response.json())
+        result = response.json()
+        if 'error' in result:
+            return jsonify({'error': result['error'].get('message', 'Anthropic API error')}), 500
+        return jsonify(result)
+    except requests.exceptions.Timeout:
+        return jsonify({'error': 'Request timed out. Try again.'}), 504
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -55,7 +64,7 @@ def read_pdf():
     try:
         url = f'https://www.googleapis.com/drive/v3/files/{file_id}?alt=media'
         headers = {'Authorization': f'Bearer {access_token}'}
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=30)
 
         if response.status_code != 200:
             return jsonify({'error': 'Could not fetch file from Drive'}), 400
@@ -77,7 +86,8 @@ def read_pdf():
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'ok', 'agent': 'Mr. Ofori 007 School Cloud'})
+    key_status = 'configured' if ANTHROPIC_API_KEY else 'MISSING'
+    return jsonify({'status': 'ok', 'agent': 'Mr. Ofori 007 School Cloud', 'api_key': key_status})
 
 
 if __name__ == '__main__':
