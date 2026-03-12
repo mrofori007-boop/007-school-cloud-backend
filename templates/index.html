@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mr. Ofori 007 School Cloud</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+  :root {
+    --gold: #C9A84C; --gold-light: #E8C97A; --black: #080808;
+    --dark: #111111; --dark2: #1A1A1A; --dark3: #222222;
+    --grey: #888; --white: #F5F0E8; --red: #C0392B; --green: #27AE60;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--black); color: var(--white); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9999; opacity: 0.4; }
+
+  /* AUTH */
+  #authScreen { position: fixed; inset: 0; background: var(--black); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeUp 0.5s ease both; }
+  .auth-card { background: var(--dark); border: 1px solid #222; border-radius: 16px; padding: 48px 40px; text-align: center; max-width: 380px; width: 90%; }
+  .auth-badge { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: var(--gold); letter-spacing: 6px; }
+  .auth-sub { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; color: var(--grey); text-transform: uppercase; margin-bottom: 28px; }
+  .auth-title { font-size: 14px; color: var(--white); margin-bottom: 8px; font-weight: 500; }
+  .auth-desc { font-size: 12px; color: var(--grey); line-height: 1.6; margin-bottom: 28px; }
+  .google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--white); color: #333; border: none; border-radius: 8px; padding: 13px 24px; font-size: 13px; font-weight: 500; cursor: pointer; width: 100%; transition: all 0.2s; font-family: 'DM Sans', sans-serif; }
+  .google-btn:hover { background: #ececec; }
+  .google-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .auth-note { font-family: 'DM Mono', monospace; font-size: 9px; color: #3a3a3a; letter-spacing: 1px; margin-top: 14px; }
+
+  /* HEADER */
+  header { display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; border-bottom: 1px solid #1a1a1a; position: sticky; top: 0; background: rgba(8,8,8,0.96); backdrop-filter: blur(12px); z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-badge { width: 34px; height: 34px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--black); flex-shrink: 0; }
+  .logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 17px; letter-spacing: 3px; color: var(--gold); }
+  .logo-sub { font-family: 'DM Mono', monospace; font-size: 8px; color: var(--grey); letter-spacing: 2px; text-transform: uppercase; }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .drive-status { display: flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 9px; color: var(--grey); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #444; }
+  .dot.on { background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .user-chip { display: flex; align-items: center; gap: 7px; background: var(--dark2); border: 1px solid #252525; border-radius: 20px; padding: 4px 12px 4px 5px; }
+  .u-avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: var(--black); overflow: hidden; }
+  .u-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .u-name { font-size: 11px; color: #aaa; }
+  .signout-btn { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--grey); background: none; border: 1px solid #1e1e1e; border-radius: 4px; padding: 3px 8px; cursor: pointer; transition: all 0.15s; }
+  .signout-btn:hover { color: var(--red); border-color: var(--red); }
+
+  /* MAIN */
+  main { display: grid; grid-template-columns: 248px 1fr; min-height: calc(100vh - 59px); }
+
+  /* SIDEBAR */
+  sidebar { border-right: 1px solid #181818; padding: 18px 12px; display: flex; flex-direction: column; gap: 3px; background: var(--dark); overflow-y: auto; max-height: calc(100vh - 59px); }
+  .sb-label { font-family: 'DM Mono', monospace; font-size: 8px; letter-spacing: 3px; color: #555; text-transform: uppercase; padding: 10px 10px 3px; margin-top: 4px; }
+  .sb-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; font-size: 12px; color: #888; border: 1px solid transparent; }
+  .sb-item:hover { background: var(--dark2); color: var(--white); }
+  .sb-item.active { background: var(--dark2); color: var(--gold); border-color: #222; }
+  .sb-item .ic { font-size: 13px; width: 16px; text-align: center; }
+  .df-item { display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 5px; cursor: pointer; font-size: 10px; color: #666; transition: background 0.15s; }
+  .df-item:hover { background: var(--dark2); color: var(--white); }
+  .df-ext { font-family: 'DM Mono', monospace; font-size: 8px; padding: 1px 4px; border-radius: 3px; background: #1e1e1e; color: var(--gold); flex-shrink: 0; }
+  .df-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* CONTENT */
+  .content { display: flex; flex-direction: column; }
+  .chat-area { flex: 1; padding: 26px 28px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 175px); }
+
+  /* WELCOME */
+  .welcome { text-align: center; padding: 44px 20px; animation: fadeUp 0.6s ease both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+  .w-badge { display: inline-block; font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 3px; color: var(--gold); border: 1px solid rgba(201,168,76,0.3); padding: 4px 14px; border-radius: 20px; margin-bottom: 16px; text-transform: uppercase; }
+  .welcome h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(30px, 5vw, 48px); letter-spacing: 4px; line-height: 1; margin-bottom: 8px; }
+  .welcome h1 span { color: var(--gold); }
+  .welcome p { font-size: 12px; color: var(--grey); max-width: 360px; margin: 0 auto 26px; line-height: 1.65; }
+  .qa-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; max-width: 440px; margin: 0 auto; }
+  .qa-btn { background: var(--dark2); border: 1px solid #1e1e1e; border-radius: 8px; padding: 12px 14px; cursor: pointer; text-align: left; transition: all 0.2s; }
+  .qa-btn:hover { border-color: rgba(201,168,76,0.3); background: var(--dark3); }
+  .qa-icon { font-size: 15px; margin-bottom: 5px; display: block; }
+  .qa-title { font-size: 11px; font-weight: 500; display: block; margin-bottom: 2px; color: var(--white); }
+  .qa-desc { font-size: 10px; color: var(--grey); display: block; }
+
+  /* MESSAGES */
+  .message { display: flex; gap: 10px; animation: fadeUp 0.3s ease both; }
+  .message.user { flex-direction: row-reverse; }
+  .m-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 10px; flex-shrink: 0; margin-top: 2px; }
+  .m-avatar.ai { background: var(--gold); color: var(--black); }
+  .m-avatar.user { background: var(--dark3); color: var(--gold); border: 1px solid #2a2a2a; }
+  .m-bubble { max-width: 74%; padding: 10px 14px; border-radius: 12px; font-size: 12.5px; line-height: 1.65; }
+  .message.ai .m-bubble { background: var(--dark2); border: 1px solid #202020; border-top-left-radius: 4px; }
+  .message.user .m-bubble { background: rgba(201,168,76,0.09); border: 1px solid rgba(201,168,76,0.2); border-top-right-radius: 4px; }
+  .m-meta { font-family: 'DM Mono', monospace; font-size: 9px; color: #444; margin-top: 3px; padding: 0 3px; }
+  .message.user .m-meta { text-align: right; }
+
+  /* FILE CARD */
+  .f-card { background: var(--dark3); border: 1px solid #262626; border-radius: 7px; padding: 9px 12px; margin-top: 7px; display: flex; align-items: center; gap: 9px; cursor: pointer; transition: border-color 0.2s; }
+  .f-card:hover { border-color: rgba(201,168,76,0.3); }
+  .f-icon { font-size: 16px; }
+  .f-info { flex: 1; min-width: 0; }
+  .f-name { font-size: 11px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .f-meta { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--grey); margin-top: 1px; }
+  .f-tag { font-family: 'DM Mono', monospace; font-size: 8px; padding: 2px 6px; border-radius: 3px; background: rgba(201,168,76,0.08); color: var(--gold); border: 1px solid rgba(201,168,76,0.15); flex-shrink: 0; }
+
+  /* TYPING */
+  .typing { display: flex; gap: 4px; align-items: center; }
+  .typing span { width: 5px; height: 5px; background: var(--gold); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .typing span:nth-child(2){animation-delay:.2s} .typing span:nth-child(3){animation-delay:.4s}
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-5px);opacity:1} }
+
+  /* INPUT */
+  .input-bar { padding: 12px 28px 18px; border-top: 1px solid #161616; background: var(--black); }
+  .f-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 7px; }
+  .f-pill { font-family: 'DM Mono', monospace; font-size: 9px; padding: 3px 9px; border-radius: 20px; border: 1px solid #222; background: var(--dark2); color: #666; cursor: pointer; transition: all 0.15s; }
+  .f-pill:hover, .f-pill.active { border-color: rgba(201,168,76,0.3); color: var(--gold); background: rgba(201,168,76,0.06); }
+  .input-row { display: flex; align-items: center; gap: 8px; background: var(--dark2); border: 1px solid #222; border-radius: 10px; padding: 8px 12px; transition: border-color 0.2s; }
+  .input-row:focus-within { border-color: rgba(201,168,76,0.3); }
+  .input-row input { flex: 1; background: none; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 12.5px; color: var(--white); }
+  .input-row input::placeholder { color: #444; }
+  .send-btn { background: var(--gold); border: none; border-radius: 6px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: var(--black); font-size: 12px; flex-shrink: 0; }
+  .send-btn:hover { background: var(--gold-light); }
+  .send-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .i-hint { font-family: 'DM Mono', monospace; font-size: 8px; color: #2e2e2e; margin-top: 6px; text-align: center; letter-spacing: 1px; }
+
+  /* LOADING BAR */
+  .lbar { height: 2px; background: linear-gradient(90deg,transparent,var(--gold),transparent); background-size: 200% 100%; animation: shimmer 1.5s infinite; display: none; }
+  .lbar.on { display: block; }
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+  ::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:#1e1e1e;border-radius:4px}
+
+  @media(max-width:700px){
+    main{grid-template-columns:1fr} sidebar{display:none}
+    .chat-area{padding:16px} .input-bar{padding:10px 16px 16px}
+    .qa-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-badge">007</div>
+    <div class="auth-sub">Mr. Ofori School Cloud</div>
+    <div class="auth-title">Academic Intelligence System</div>
+    <div class="auth-desc">Connect your Google Drive to access your lecture notes, past questions, and assignments directly from the agent.</div>
+    <button class="google-btn" onclick="signIn()">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Connect Google Drive
+    </button>
+    <div class="auth-note">READ-ONLY ACCESS. YOUR FILES STAY IN YOUR DRIVE.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <header>
+    <div class="logo">
+      <div class="logo-badge">007</div>
+      <div>
+        <div class="logo-text">MR. OFORI SCHOOL CLOUD</div>
+        <div class="logo-sub">Academic Intelligence System</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="drive-status">
+        <div class="dot on"></div>
+        <span id="statusTxt">CONNECTING...</span>
+      </div>
+      <div class="user-chip">
+        <div class="u-avatar" id="uAvatar">MO</div>
+        <span class="u-name" id="uName">Mr. Ofori</span>
+      </div>
+      <button class="signout-btn" onclick="signOut()">SIGN OUT</button>
+    </div>
+  </header>
+
+  <div class="lbar" id="lbar"></div>
+
+  <main>
+    <sidebar>
+      <div class="sb-label">Mode</div>
+      <div class="sb-item active" onclick="setMode('chat',this)"><span class="ic">💬</span> Ask AI</div>
+      <div class="sb-item" onclick="setMode('search',this)"><span class="ic">🔍</span> Search Files</div>
+      <div class="sb-item" onclick="setMode('summarize',this)"><span class="ic">📋</span> Summarize</div>
+      <div class="sb-item" onclick="setMode('questions',this)"><span class="ic">❓</span> Past Questions</div>
+
+      <div class="sb-label">Courses</div>
+      <div class="sb-item" onclick="qc('Contract Administration & Professional Practice')"><span class="ic">📄</span> Contract Admin</div>
+      <div class="sb-item" onclick="qc('People & Leadership in the Built Environment')"><span class="ic">👥</span> People & Leadership</div>
+      <div class="sb-item" onclick="qc('Procurement of Works, Goods and Services')"><span class="ic">🏗️</span> Procurement</div>
+      <div class="sb-item" onclick="qc('Contract Law')"><span class="ic">⚖️</span> Contract Law</div>
+      <div class="sb-item" onclick="qc('Construction Project Financing')"><span class="ic">💰</span> Project Financing</div>
+      <div class="sb-item" onclick="qc('Research Project')"><span class="ic">🔬</span> Research Project</div>
+
+      <div class="sb-label">Drive Files <span id="fileCount" style="color:var(--gold)"></span></div>
+      <div id="dfList"><div style="font-family:'DM Mono',monospace;font-size:10px;color:#333;padding:6px 10px">Loading...</div></div>
+    </sidebar>
+
+    <div class="content">
+      <div class="chat-area" id="chat">
+        <div class="welcome" id="welcome">
+          <div class="w-badge">🔐 Agent 007 Active</div>
+          <h1>Welcome to your<br><span>School Cloud</span></h1>
+          <p>Drive connected. Ask anything about your notes, past questions, or assignments.</p>
+          <div class="qa-grid">
+            <div class="qa-btn" onclick="sq('Summarize Contract Administration & Professional Practice for exam prep')">
+              <span class="qa-icon">📋</span><span class="qa-title">Summarize Notes</span><span class="qa-desc">Quick topic overview</span>
+            </div>
+            <div class="qa-btn" onclick="sq('Generate 5 exam questions on Procurement of Works, Goods and Services with model answers')">
+              <span class="qa-icon">❓</span><span class="qa-title">Past Questions</span><span class="qa-desc">Exam practice</span>
+            </div>
+            <div class="qa-btn" onclick="sq('What are the key topics in Contract Law for exams?')">
+              <span class="qa-icon">📖</span><span class="qa-title">Key Topics</span><span class="qa-desc">Study focus areas</span>
+            </div>
+            <div class="qa-btn" onclick="showFiles()">
+              <span class="qa-icon">📁</span><span class="qa-title">Browse Drive</span><span class="qa-desc">View all files</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-bar">
+        <div class="f-pills">
+          <div class="f-pill active" onclick="setFilter('All Files',this)">All Files</div>
+          <div class="f-pill" onclick="setFilter('Lecture Notes',this)">Lecture Notes</div>
+          <div class="f-pill" onclick="setFilter('Past Questions',this)">Past Questions</div>
+          <div class="f-pill" onclick="setFilter('Assignments',this)">Assignments</div>
+        </div>
+        <div class="input-row">
+          <input type="text" id="inp" placeholder="Ask about your notes, search files, generate questions..." onkeydown="if(event.key==='Enter')send()"/>
+          <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
+        </div>
+        <div class="i-hint">SCHOOL FILES / GOOGLE DRIVE &nbsp;•&nbsp; MR. OFORI 007</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const CLIENT_ID = '208046927652-usvj6pn7k2272o7rb25364d4ecibbiu4.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.profile';
+const BACKEND = 'https://zero07-school-cloud-backend.onrender.com';
+
+let token = null, files = [], filter = 'All Files', mode = 'chat', history = [], loading = false;
+
+function signIn() {
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID, scope: SCOPES,
+    callback: async r => {
+      if (r.error) { alert('Sign in failed: ' + r.error); return; }
+      token = r.access_token;
+      await boot();
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function boot() {
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: `Bearer ${token}` } });
+    const u = await r.json();
+    document.getElementById('uName').textContent = u.given_name || 'Mr. Ofori';
+    if (u.picture) document.getElementById('uAvatar').innerHTML = `<img src="${u.picture}">`;
+  } catch(e) {}
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  await loadFiles();
+}
+
+function signOut() {
+  token = null; files = []; history = [];
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+async function loadFiles() {
+  document.getElementById('statusTxt').textContent = 'LOADING FILES...';
+  try {
+    const q = encodeURIComponent("mimeType != 'application/vnd.google-apps.folder' and trashed = false");
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType,modifiedTime,size)&pageSize=200&orderBy=modifiedTime desc`, { headers: { Authorization: `Bearer ${token}` } });
+    const d = await r.json();
+    files = d.files || [];
+    document.getElementById('statusTxt').textContent = `${files.length} FILES LOADED`;
+    document.getElementById('fileCount').textContent = `(${files.length})`;
+    renderDriveList();
+  } catch(e) {
+    document.getElementById('statusTxt').textContent = 'DRIVE ERROR';
+  }
+}
+
+function fileIcon(mime, name) {
+  if (!mime) return '📄';
+  if (mime.includes('pdf')) return '📕';
+  if (mime.includes('document') || name.endsWith('.docx')) return '📝';
+  if (mime.includes('spreadsheet') || name.endsWith('.xlsx')) return '📊';
+  if (mime.includes('presentation') || name.endsWith('.pptx')) return '📑';
+  if (mime.includes('image')) return '🖼️';
+  return '📄';
+}
+
+function renderDriveList() {
+  const el = document.getElementById('dfList');
+  if (!files.length) { el.innerHTML = '<div style="font-size:10px;color:#333;padding:8px 10px;font-family:\'DM Mono\',monospace">No files found</div>'; return; }
+  el.innerHTML = files.slice(0, 20).map(f => {
+    const ext = f.name.split('.').pop().toUpperCase().slice(0,4);
+    return `<div class="df-item" onclick="askFile('${f.name.replace(/'/g,"\\'")}')">
+      <span>${fileIcon(f.mimeType, f.name)}</span>
+      <span class="df-name">${f.name}</span>
+      <span class="df-ext">${ext}</span>
+    </div>`;
+  }).join('') + (files.length > 20 ? `<div style="font-size:10px;color:#333;padding:4px 10px;font-family:'DM Mono',monospace">+${files.length-20} more</div>` : '');
+}
+
+async function readFile(id, mime) {
+  try {
+    if (mime === 'application/pdf') {
+      const r = await fetch(BACKEND + '/read-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileId: id, accessToken: token })
+      });
+      const d = await r.json();
+      return d.content || null;
+    }
+    let url;
+    if (mime === 'application/vnd.google-apps.document') url = `https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=text/plain`;
+    else if (mime === 'application/vnd.google-apps.spreadsheet') url = `https://www.googleapis.com/drive/v3/files/${id}/export?mimeType=text/csv`;
+    else if (mime && (mime.includes('text') || mime === 'application/json')) url = `https://www.googleapis.com/drive/v3/files/${id}?alt=media`;
+    else return null;
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const t = await r.text();
+    return t.slice(0, 5000);
+  } catch(e) { return null; }
+}
+
+function askFile(name) {
+  document.getElementById('inp').value = `Tell me about the content of: ${name}`;
+  document.getElementById('inp').focus();
+}
+
+function showFiles() {
+  if (!files.length) { addMsg('ai', 'No files found in your Drive yet.'); return; }
+  const w = document.getElementById('welcome'); if (w) w.remove();
+  addMsg('user', 'Show me all my Drive files');
+  const chat = document.getElementById('chat');
+  const d = document.createElement('div');
+  d.className = 'message ai';
+  d.innerHTML = `<div class="m-avatar ai">007</div><div style="max-width:82%"><div class="m-bubble">
+    <strong style="color:var(--gold)">Found ${files.length} files in your Drive</strong><br><br>
+    ${files.slice(0,25).map(f=>`<div class="f-card" onclick="askFile('${f.name.replace(/'/g,"\\'")}')">
+      <span class="f-icon">${fileIcon(f.mimeType,f.name)}</span>
+      <div class="f-info"><div class="f-name">${f.name}</div><div class="f-meta">${new Date(f.modifiedTime).toLocaleDateString()}</div></div>
+      <div class="f-tag">ASK AI</div>
+    </div>`).join('')}
+    ${files.length>25?`<div style="font-size:10px;color:var(--grey);margin-top:6px">...and ${files.length-25} more</div>`:''}
+  </div><div class="m-meta">${now()}</div></div>`;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+
+function setMode(m, el) {
+  mode = m;
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const ph = { chat:'Ask about your notes, search files, generate questions...', search:'Search your Drive files by topic...', summarize:'Enter a topic or course to summarize...', questions:'Enter a topic to generate exam questions...' };
+  document.getElementById('inp').placeholder = ph[m] || ph.chat;
+}
+
+function setFilter(f, el) {
+  filter = f;
+  document.querySelectorAll('.f-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function qc(course) { document.getElementById('inp').value = `Give me a study overview of ${course}`; document.getElementById('inp').focus(); }
+function sq(t) { document.getElementById('inp').value = t; send(); }
+function now() { return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+
+function addMsg(role, content, cards=[]) {
+  const w = document.getElementById('welcome'); if (w) w.remove();
+  const chat = document.getElementById('chat');
+  const d = document.createElement('div');
+  d.className = `message ${role}`;
+  const av = document.createElement('div');
+  av.className = `m-avatar ${role}`;
+  av.textContent = role === 'ai' ? '007' : 'MO';
+  const bub = document.createElement('div');
+  bub.className = 'm-bubble';
+  bub.innerHTML = fmt(content);
+  cards.forEach(c => {
+    const fc = document.createElement('div');
+    fc.className = 'f-card';
+    fc.innerHTML = `<span class="f-icon">${c.icon}</span><div class="f-info"><div class="f-name">${c.name}</div><div class="f-meta">${c.meta}</div></div><div class="f-tag">${c.tag}</div>`;
+    fc.onclick = () => askFile(c.name);
+    bub.appendChild(fc);
+  });
+  const meta = document.createElement('div');
+  meta.className = 'm-meta'; meta.textContent = now();
+  const wrap = document.createElement('div');
+  wrap.style.maxWidth = '80%';
+  wrap.appendChild(bub); wrap.appendChild(meta);
+  d.appendChild(av); d.appendChild(wrap);
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+
+function fmt(t) {
+  return t
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/^### (.*$)/gm,'<strong style="color:var(--gold);font-size:13px;display:block;margin:10px 0 4px">$1</strong>')
+    .replace(/^## (.*$)/gm,'<strong style="color:var(--gold);font-size:14px;display:block;margin:12px 0 5px">$1</strong>')
+    .replace(/^- (.*$)/gm,'• $1<br>')
+    .replace(/^\d+\. (.*$)/gm,m=>`<span style="display:block;margin:4px 0">${m}</span>`)
+    .replace(/\n/g,'<br>');
+}
+
+function showTyping() {
+  const chat = document.getElementById('chat');
+  const d = document.createElement('div');
+  d.className = 'message ai'; d.id = 'typing';
+  d.innerHTML = `<div class="m-avatar ai">007</div><div class="m-bubble" style="padding:13px 15px"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+async function send() {
+  if (loading) return;
+  const inp = document.getElementById('inp');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  addMsg('user', text);
+  loading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  // Try to read file content if a file is mentioned
+  let fileContent = '';
+  const mentioned = files.find(f => {
+    const base = f.name.replace(/\.[^.]+$/, '').toLowerCase();
+    return text.toLowerCase().includes(base.slice(0, 12));
+  });
+  if (mentioned) {
+    const content = await readFile(mentioned.id, mentioned.mimeType);
+    if (content) fileContent = `\n\nFILE CONTENT — "${mentioned.name}":\n${content}`;
+  }
+
+  history.push({ role: 'user', content: text });
+  showTyping();
+  document.getElementById('lbar').classList.add('on');
+
+  const filesList = files.length > 0
+    ? `\nFILES IN DRIVE (${files.length}):\n` + files.map(f => `- ${f.name}`).join('\n')
+    : '\nNo files in Drive yet.';
+
+  const sys = `You are the Mr. Ofori 007 School Cloud AI Agent. You are a sharp, focused academic assistant for Mr. Innocent Ofori, a 400-level Building Technology student at KsTU (Kumasi Technical University), Ghana.
+
+STUDENT: Mr. Innocent Ofori | 400-level Building Technology | KsTU, Ghana | Mid-semester exam prep
+
+COURSES:
+1. Contract Administration & Professional Practice
+2. People & Leadership in the Built Environment
+3. Procurement of Works, Goods and Services
+4. Contract Law
+5. Construction Project Financing
+6. Interim Valuation and Payment Certificate Preparation
+7. Research Project: Digital Technology Adoption in Construction Project Management in Ghana (Chapter 1 drafted)
+
+DRIVE STRUCTURE: School Files > [Course Name] > Lecture Notes / Assignments / Past Questions
+${filesList}${fileContent}
+
+ACTIVE FILTER: ${filter} | MODE: ${mode}
+
+YOUR ROLE:
+- Answer course content questions clearly and accurately
+- Summarize topics concisely for exam prep
+- Generate numbered exam questions with model answers when asked
+- Reference specific Drive files when relevant
+- Help with research project on digital tech adoption in Ghana construction
+- Be direct, practical, exam-focused. No padding.
+
+FORMAT: Use ** for bold, number exam questions, always give model answers after questions.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: sys,
+        messages: history
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Something went wrong. Try again.';
+    history.push({ role: 'assistant', content: reply });
+
+    const refFiles = files.filter(f => reply.toLowerCase().includes(f.name.toLowerCase().replace(/\.[^.]+$/,'').slice(0,10))).slice(0,2);
+    const cards = refFiles.map(f => ({ icon: fileIcon(f.mimeType, f.name), name: f.name, meta: new Date(f.modifiedTime).toLocaleDateString(), tag: 'FROM DRIVE' }));
+
+    removeTyping();
+    document.getElementById('lbar').classList.remove('on');
+    addMsg('ai', reply, cards);
+  } catch(e) {
+    removeTyping();
+    document.getElementById('lbar').classList.remove('on');
+    addMsg('ai', 'Connection error. Check your internet and try again.');
+  }
+
+  loading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+</script>
+</body>
+</html>
