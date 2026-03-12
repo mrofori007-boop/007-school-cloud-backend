@@ -4,12 +4,11 @@ import requests
 import PyPDF2
 import io
 import os
-import traceback
 
 app = Flask(__name__)
 CORS(app)
 
-ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
 @app.route('/')
 def index():
@@ -17,47 +16,48 @@ def index():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    if not ANTHROPIC_API_KEY:
-        print("ERROR: ANTHROPIC_API_KEY is not set")
-        return jsonify({'error': 'API key not configured on server'}), 500
+    if not GEMINI_API_KEY:
+        return jsonify({'error': 'Gemini API key not configured on server'}), 500
 
     try:
         data = request.json
-        print(f"Received chat request with {len(data.get('messages', []))} messages")
-        
         messages = data.get('messages', [])
         system = data.get('system', '')
 
         if not messages:
             return jsonify({'error': 'No messages provided'}), 400
 
-        response = requests.post(
-            'https://api.anthropic.com/v1/messages',
-            headers={
-                'Content-Type': 'application/json',
-                'x-api-key': ANTHROPIC_API_KEY,
-                'anthropic-version': '2023-06-01'
-            },
-            json={
-                'model': 'claude-sonnet-4-20250514',
-                'max_tokens': 1000,
-                'system': system,
-                'messages': messages
-            },
-            timeout=30
-        )
-        print(f"Anthropic response status: {response.status_code}")
+        # Build Gemini contents from message history
+        contents = []
+        for msg in messages:
+            role = 'user' if msg['role'] == 'user' else 'model'
+            contents.append({'role': role, 'parts': [{'text': msg['content']}]})
+
+        payload = {
+            'system_instruction': {'parts': [{'text': system}]},
+            'contents': contents,
+            'generationConfig': {
+                'maxOutputTokens': 1000,
+                'temperature': 0.7
+            }
+        }
+
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}'
+        response = requests.post(url, json=payload, timeout=30)
         result = response.json()
-        print(f"Anthropic result keys: {list(result.keys())}")
-        
+
         if 'error' in result:
-            print(f"Anthropic error: {result['error']}")
-            return jsonify({'error': result['error'].get('message', 'Anthropic API error')}), 500
-        return jsonify(result)
+            return jsonify({'error': result['error'].get('message', 'Gemini API error')}), 500
+
+        # Extract text from Gemini response
+        text = result['candidates'][0]['content']['parts'][0]['text']
+
+        # Return in Anthropic-compatible format so frontend works without changes
+        return jsonify({
+            'content': [{'type': 'text', 'text': text}]
+        })
 
     except Exception as e:
-        print(f"EXCEPTION in /chat: {str(e)}")
-        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
@@ -95,8 +95,8 @@ def read_pdf():
 
 @app.route('/health', methods=['GET'])
 def health():
-    key_status = 'configured' if ANTHROPIC_API_KEY else 'MISSING'
-    return jsonify({'status': 'ok', 'agent': 'Mr. Ofori 007 School Cloud', 'api_key': key_status})
+    key_status = 'configured' if GEMINI_API_KEY else 'MISSING'
+    return jsonify({'status': 'ok', 'agent': 'Mr. Ofori 007 School Cloud', 'gemini_key': key_status})
 
 
 if __name__ == '__main__':
