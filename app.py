@@ -4,6 +4,7 @@ import requests
 import PyPDF2
 import io
 import os
+import traceback
 
 app = Flask(__name__)
 CORS(app)
@@ -17,7 +18,7 @@ def index():
 @app.route('/chat', methods=['POST'])
 def chat():
     if not GEMINI_API_KEY:
-        return jsonify({'error': 'Gemini API key not configured on server'}), 500
+        return jsonify({'error': 'Gemini API key not configured'}), 500
 
     try:
         data = request.json
@@ -27,7 +28,7 @@ def chat():
         if not messages:
             return jsonify({'error': 'No messages provided'}), 400
 
-        # Build Gemini contents from message history
+        # Build Gemini contents
         contents = []
         for msg in messages:
             role = 'user' if msg['role'] == 'user' else 'model'
@@ -44,20 +45,23 @@ def chat():
 
         url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}'
         response = requests.post(url, json=payload, timeout=30)
+        
+        print(f"Gemini status: {response.status_code}")
+        print(f"Gemini response: {response.text[:500]}")
+        
         result = response.json()
 
         if 'error' in result:
-            return jsonify({'error': result['error'].get('message', 'Gemini API error')}), 500
+            err_msg = result['error'].get('message', 'Gemini API error')
+            print(f"Gemini error: {err_msg}")
+            return jsonify({'error': err_msg}), 500
 
-        # Extract text from Gemini response
         text = result['candidates'][0]['content']['parts'][0]['text']
-
-        # Return in Anthropic-compatible format so frontend works without changes
-        return jsonify({
-            'content': [{'type': 'text', 'text': text}]
-        })
+        return jsonify({'content': [{'type': 'text', 'text': text}]})
 
     except Exception as e:
+        print(f"Exception: {str(e)}")
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 
