@@ -3,13 +3,45 @@ from flask_cors import CORS
 import requests
 import PyPDF2
 import io
+import os
 
 app = Flask(__name__)
 CORS(app)
 
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    data = request.json
+    messages = data.get('messages', [])
+    system = data.get('system', '')
+
+    if not messages:
+        return jsonify({'error': 'No messages provided'}), 400
+
+    try:
+        response = requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers={
+                'Content-Type': 'application/json',
+                'x-api-key': ANTHROPIC_API_KEY,
+                'anthropic-version': '2023-06-01'
+            },
+            json={
+                'model': 'claude-sonnet-4-20250514',
+                'max_tokens': 1000,
+                'system': system,
+                'messages': messages
+            }
+        )
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @app.route('/read-pdf', methods=['POST'])
 def read_pdf():
